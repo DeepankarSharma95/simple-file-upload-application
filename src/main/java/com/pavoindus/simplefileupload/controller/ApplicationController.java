@@ -1,21 +1,21 @@
 package com.pavoindus.simplefileupload.controller;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.StringJoiner;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.pavoindus.simplefileupload.exceptions.UnsupportedFileFormatException;
+import com.pavoindus.simplefileupload.responsebody.SimpleResponeBody;
 import com.pavoindus.simplefileupload.form.FileUploadForm;
 
 /**
@@ -29,7 +29,31 @@ import com.pavoindus.simplefileupload.form.FileUploadForm;
     return "welcome";
   }
 
-  @PostMapping("/upload") public String upload(
+  @PostMapping("/upload")
+  public @ResponseBody SimpleResponeBody processUploadedFile(@ModelAttribute FileUploadForm fileUploadForm) {
+    MultipartFile file = fileUploadForm.getFile();
+    if (!file.getOriginalFilename().endsWith(".csv") && !file.getOriginalFilename()
+        .endsWith(".txt")) {
+      throw new UnsupportedFileFormatException();
+    }
+    List<String> stringLines;
+    try {
+      String contents = new String(file.getBytes());
+      String[] contentLines = contents.split("\\r\\n");
+      stringLines = Arrays.asList(contentLines);
+    } catch (IOException e) {
+      throw new UnsupportedFileFormatException();
+    }
+    return new SimpleResponeBody(stringLines);
+  }
+
+  @ExceptionHandler(UnsupportedFileFormatException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public @ResponseBody SimpleResponeBody handleException() {
+    return new SimpleResponeBody("File format should be either .csv or .txt and should be readable");
+  }
+
+  /*@PostMapping("/upload") public String upload(
       @ModelAttribute FileUploadForm fileUploadForm,
       RedirectAttributes redirectAttributes) {
     StringJoiner sj = new StringJoiner(" , ");
@@ -66,7 +90,7 @@ import com.pavoindus.simplefileupload.form.FileUploadForm;
           "You successfully uploaded '" + uploadedFileName + "'");
     }
     return "redirect:/uploadStatus";
-  }
+  }*/
 
   @GetMapping("/uploadStatus") public String uploadStatus() {
     return "uploadStatus";

@@ -9,14 +9,14 @@ import org.springframework.web.multipart.MultipartFile;
  */
 public class FileUploadForm {
 
-  private MultipartFile[] files;
+  private MultipartFile file;
 
-  public MultipartFile[] getFiles() {
-    return files;
+  public MultipartFile getFile() {
+    return file;
   }
 
-  public void setFiles(MultipartFile[] files) {
-    this.files = files;
+  public void setFile(MultipartFile files) {
+    this.file = files;
   }
 
 }
